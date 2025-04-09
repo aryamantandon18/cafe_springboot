@@ -1,0 +1,121 @@
+package com.tcf.product.Controller;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.tcf.product.Entity.Product;
+
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import java.util.Base64;
+import java.util.List;
+
+@CrossOrigin
+@Slf4j
+@RestController
+@RequestMapping("/products")
+public class ProductController {
+
+    @Autowired
+    private ProductService productService;
+
+    // ✅ Create Product (With Image)
+    @PostMapping(value = "/add", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Product createProduct(
+            @RequestParam String name,
+            @RequestParam String description,
+            @RequestParam double price,
+            @RequestParam int stock,
+            @RequestParam MultipartFile image) {
+        log.info("Creating product with name: {}", name);
+        return productService.createProduct(name, description, price, stock, image);
+    }
+
+    // ✅ Get All Products
+    @GetMapping("/all")
+    public List<Product> getAllProducts() {
+        log.info("Fetching all products.");
+        return productService.getAllProducts();
+    }
+
+    // ✅ Get Product By ID (With Base64 Image)
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getProductById(@PathVariable("id") Long id) {
+        log.info("Fetching product with ID: {}", id);
+        Product product = productService.getProductById(id);
+
+        if (product == null) {
+            log.error("Product not found with ID: {}", id);
+            return ResponseEntity.status(404).body("Product not found with ID: " + id);
+        }
+
+        // Convert image to Base64
+        String base64Image = product.getImage() != null ?
+                Base64.getEncoder().encodeToString(product.getImage()) : null;
+
+        ProductResponse response = new ProductResponse();
+        response.setId(product.getId());
+        response.setName(product.getName());
+        response.setDescription(product.getDescription());
+        response.setPrice(product.getPrice());
+        response.setStock(product.getStock());
+        response.setBase64Image(base64Image);
+
+        log.info("Product found and returned with ID: {}", id);
+        return ResponseEntity.ok(response);
+    }
+
+    // ✅ Get Product Image (As JPEG)
+    @GetMapping("/image/{id}")
+    public ResponseEntity<byte[]> getProductImage(@PathVariable("id") Long id) {
+        log.info("Fetching image for product ID: {}", id);
+        byte[] image = productService.getProductImage(id);
+
+        if (image == null || image.length == 0) {
+            log.error("Image not found for product ID: {}", id);
+            return ResponseEntity.notFound().build();
+        }
+
+        log.info("Image successfully retrieved for product ID: {}", id);
+        return ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).body(image);
+    }
+
+    // ✅ Update Product (Optional Image)
+    @PutMapping(value = "/update/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> updateProduct(
+            @PathVariable("id") Long id,
+            @RequestParam String name,
+            @RequestParam String description,
+            @RequestParam double price,
+            @RequestParam int stock,
+            @RequestParam(required = false) MultipartFile image) {
+
+        log.info("Updating product with ID: {}", id);
+        Product updatedProduct = productService.updateProduct(id, name, description, price, stock, image);
+
+        if (updatedProduct == null) {
+            log.error("Product not found with ID: {}", id);
+            return ResponseEntity.status(404).body("Product not found with ID: " + id);
+        }
+
+        log.info("Product updated successfully with ID: {}", id);
+        return ResponseEntity.ok(updatedProduct);
+    }
+
+    // ✅ Delete Product
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<String> deleteProduct(@PathVariable("id") Long id) {
+        log.info("Deleting product with ID: {}", id);
+        boolean isDeleted = productService.deleteProduct(id);
+
+        if (!isDeleted) {
+            log.error("Failed to delete product. Product not found with ID: {}", id);
+            return ResponseEntity.status(404).body("Product not found with ID: " + id);
+        }
+
+        log.info("Product deleted successfully with ID: {}", id);
+        return ResponseEntity.ok("Product deleted successfully!");
+    }
+}

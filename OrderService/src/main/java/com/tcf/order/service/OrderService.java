@@ -1,0 +1,15 @@
+package com.tcf.order.service;
+
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+
+import com.tcf.order.model.Order;
+import com.tcf.order.model.OrderResponse;
+
+@Service
+public interface OrderService {
+	OrderResponseWithPayment createOrder(Order order);
+	List<Order> getAllOrders(); 
+    public List<OrderResponse> getAllOrdersWithProducts();
+}

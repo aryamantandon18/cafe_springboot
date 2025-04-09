@@ -1,0 +1,29 @@
+package com.tcf.payment.controller;
+
+
+
+import com.tcf.payment.model.PaymentRequest;
+import com.tcf.payment.model.PaymentResponse;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Random;
+
+@RestController
+@RequestMapping("/payments")
+public class PaymentController {
+
+    @PostMapping("/process")
+    public PaymentResponse processPayment(@RequestBody PaymentRequest paymentRequest) {
+        PaymentResponse response = new PaymentResponse();
+        response.setOrderId(paymentRequest.getOrderId());
+
+        // Simulate Payment Success/Failure using Random
+        boolean isSuccess = new Random().nextBoolean();
+        response.setSuccess(isSuccess);
+        response.setMessage(isSuccess ? "Payment Successful" : "Payment Failed");
+
+        System.out.println("Payment Processed for Order ID: " + paymentRequest.getOrderId() +
+                            " | Status: " + response.getMessage());
+        return response;
+    }
+}

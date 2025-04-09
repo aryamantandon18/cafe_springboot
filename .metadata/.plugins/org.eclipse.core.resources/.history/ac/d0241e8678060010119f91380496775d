@@ -1,0 +1,5 @@
+package com.tcf.payment.controller;
+
+public class PaymentController {
+
+}

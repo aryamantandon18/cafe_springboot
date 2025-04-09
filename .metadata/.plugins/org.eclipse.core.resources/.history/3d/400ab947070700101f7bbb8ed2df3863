@@ -1,0 +1,27 @@
+package com.tcf.order.model;
+
+
+
+import jakarta.persistence.*;
+import lombok.Data;
+import java.util.List;
+
+@Entity
+@Data
+public class Order {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String custName;
+    private String custNo;
+
+    @ElementCollection
+    private List<Long> productIds;
+
+    @ElementCollection
+    private List<Integer> quantities;
+
+    private double totalBill;
+}

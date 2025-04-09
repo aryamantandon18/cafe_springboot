@@ -1,0 +1,5 @@
+package com.tcf.payment.model;
+
+public class PaymentResponse {
+
+}

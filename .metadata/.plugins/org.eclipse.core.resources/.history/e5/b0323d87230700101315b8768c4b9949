@@ -1,0 +1,5 @@
+package com.tcf.order.PaymentDTO;
+
+public class PaymentRequest {
+
+}

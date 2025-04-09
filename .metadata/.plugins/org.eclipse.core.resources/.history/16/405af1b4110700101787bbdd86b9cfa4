@@ -1,0 +1,11 @@
+package com.tcf.order.model;
+
+import lombok.Data;
+
+@Data
+public class ProductDTO {
+	 private Long productId;
+	    private String productName;
+	    private Double price;
+	    private int quantity;
+}

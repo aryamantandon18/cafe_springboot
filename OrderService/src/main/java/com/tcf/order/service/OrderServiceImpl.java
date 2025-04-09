@@ -1,0 +1,112 @@
+package com.tcf.order.service;
+
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import com.tcf.order.PaymentDTO.PaymentRequest;
+import com.tcf.order.PaymentDTO.PaymentResponse;
+import com.tcf.order.Repository.OrderRepository;
+import com.tcf.order.model.Order;
+import com.tcf.order.model.OrderResponse;
+import com.tcf.order.model.ProductDTO;
+import com.tcf.order.model.ProductResponse;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
+public class OrderServiceImpl implements OrderService {
+
+    @Autowired
+    private OrderRepository orderRepository;
+
+    @Autowired
+    private RestTemplate restTemplate;
+
+    @Override
+    public OrderResponseWithPayment createOrder(Order order) {
+        double totalBill = 0;
+
+        List<Long> productIds = order.getProductIds();
+        List<Integer> quantities = order.getQuantities();
+
+        // Fetch product details using RestTemplate
+        for (int i = 0; i < productIds.size(); i++) {
+            Long productId = productIds.get(i);
+            Integer quantity = quantities.get(i);
+
+            String productServiceUrl = "http://PRODUCTSERVICE/products/" + productId;
+            ProductResponse product = restTemplate.getForObject(productServiceUrl, ProductResponse.class);
+
+            if (product != null) {
+                totalBill += product.getPrice() * quantity;
+            } else {
+                throw new RuntimeException("Product not found for ID: " + productId);
+            }
+        }
+
+        order.setTotalBill(totalBill);
+        order = orderRepository.save(order);
+
+        // Communicate with PaymentService
+        String paymentStatus = restTemplate.getForObject("http://PaymentService/pay", String.class);
+
+        if ("Payment Successful!".equals(paymentStatus)) {
+            return new OrderResponseWithPayment("Payment successful for Order ID: " + order.getId(), order);
+        } else {
+            throw new RuntimeException("Payment Failed: " + paymentStatus);
+        }
+    }
+
+
+
+    @Override
+    public List<Order> getAllOrders() {
+        return orderRepository.findAll();
+    }
+    @Override
+    public List<OrderResponse> getAllOrdersWithProducts() {
+        List<Order> orders = orderRepository.findAll();
+        List<OrderResponse> orderResponses = new ArrayList<>();
+
+        for (Order order : orders) {
+            List<ProductDTO> productDTOs = new ArrayList<>();
+            List<Long> productIds = order.getProductIds();
+            List<Integer> quantities = order.getQuantities();
+
+            for (int i = 0; i < productIds.size(); i++) {
+                Long productId = productIds.get(i);
+                Integer quantity = quantities.get(i);
+
+                try {
+                    String productServiceUrl = "http://PRODUCTSERVICE/products/" + productId;
+                    ProductResponse productResponse = restTemplate.getForObject(productServiceUrl, ProductResponse.class);
+
+                    if (productResponse != null) {
+                        ProductDTO productDTO = new ProductDTO();
+                        productDTO.setProductId(productResponse.getId());
+                        productDTO.setProductName(productResponse.getName());
+                        productDTO.setPrice(productResponse.getPrice());
+                        productDTO.setQuantity(quantity);
+                        productDTOs.add(productDTO);
+                    }
+                } catch (Exception e) {
+                    throw new RuntimeException("Error fetching product details for ID: " + productId, e);
+                }
+            }
+
+            OrderResponse orderResponse = new OrderResponse(order, productDTOs);
+            orderResponse.setId(order.getId());
+            orderResponse.setCustName(order.getCustName());
+            orderResponse.setCustNo(order.getCustNo());
+            orderResponse.setProducts(productDTOs);
+            orderResponse.setTotalBill(order.getTotalBill());
+
+            orderResponses.add(orderResponse);
+        }
+        return orderResponses;
+    }
+
+}

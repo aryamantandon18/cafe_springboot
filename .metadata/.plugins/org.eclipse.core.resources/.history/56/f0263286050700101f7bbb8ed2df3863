@@ -1,0 +1,5 @@
+package com.tcf.order.model;
+
+public class Order {
+
+}

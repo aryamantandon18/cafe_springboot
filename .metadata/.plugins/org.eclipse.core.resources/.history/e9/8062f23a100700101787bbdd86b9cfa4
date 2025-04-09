@@ -1,0 +1,19 @@
+package com.tcf.order.model;
+
+import java.util.List;
+
+public class OrderResponse {
+    private Long id;
+    private String custName;
+    private String custNo;
+    private List<ProductResponse> products;
+    private Double totalBill;
+
+    public OrderResponse(Order order, List<ProductResponse> products) {
+        this.id = order.getId();
+        this.custName = order.getCustName();
+        this.custNo = order.getCustNo();
+        this.products = products;
+        this.totalBill = order.getTotalBill();
+    }
+}
